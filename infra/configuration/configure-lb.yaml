@@ -1,0 +1,27 @@
+---
+# This Ansible playbook is used to configure HAProxy on the load balancer nodes.
+- hosts: gateway
+  become: true
+  tasks:
+    # This task installs the latest version of HAProxy on the load balancer nodes.
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: latest
+        update_cache: yes
+
+    # This task copies the HAProxy configuration file from the local machine to the load balancer nodes.
+    - name: Copy HAProxy configuration file
+      copy:
+        src: ./haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: '0644'
+
+    # This task restarts the HAProxy service on the load balancer nodes to apply the new configuration.
+    - name: Restart HAProxy service
+      systemd:
+        name: haproxy
+        state: restarted
+        daemon_reload: yes

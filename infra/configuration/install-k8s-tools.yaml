@@ -1,0 +1,66 @@
+---
+# This playbook installs Kubernetes components on all hosts.
+- hosts: nodes
+  become: yes
+  
+  tasks:
+    # Create a directory to store GPG keys used for apt repository verification.
+    - name: Create directory for keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    # Update the apt package cache to ensure the latest package lists are used.
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    # Install packages necessary for fetching and verifying GPG keys, and for secure HTTPS communication.
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg
+
+    # Fetch the Kubernetes GPG key used for signing Kubernetes package repositories, and store it in the keyrings directory.
+    - name: Fetch Kubernetes GPG key
+      shell: curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    # Add the Kubernetes apt repository to the list of package sources, specifying the GPG key to use for verification.
+    - name: Add Kubernetes repository
+      lineinfile:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        line: 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /'
+        create: yes
+
+    # Update the apt package cache again after adding the new repository.
+    - name: Update apt cache after adding repository
+      apt:
+        update_cache: yes
+
+    # Install the Kubernetes components: kubelet, kubeadm, and kubectl.
+    - name: Install Kubernetes components
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    # Hold the Kubernetes packages at their current versions to prevent them from being updated automatically.
+    - name: Hold Kubernetes packages
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl

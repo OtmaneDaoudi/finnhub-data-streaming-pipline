@@ -1,0 +1,155 @@
+---
+# This playbook sets up a Kubernetes cluster on the first master node.
+# It initializes the cluster, configures network settings, and saves join information for worker nodes.
+- hosts: firstMaster
+  tasks:
+    # Read load balancer IP from the file
+    - name: Read load balancer IP from file
+      shell: cat lb-ip
+      register: lb_ip
+      delegate_to: localhost
+
+    # Initializes the Kubernetes cluster with a specified pod network CIDR and control plane endpoint using kubeadm.
+    - name: Execute kubeadm init command to initialize the cluster
+      shell: "kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint '{{ lb_ip.stdout }}'"
+      register: kubeadm_init_output
+
+    # Sets up the KUBECONFIG environment variable to enable kubectl to communicate with the cluster.
+    - name: Set KUBECONFIG environment variable
+      become: true
+      shell: |
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    
+    # Retrieves the token necessary for worker nodes to join the Kubernetes cluster.
+    - name: "Cluster token"
+      shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
+      register: K8S_TOKEN
+
+    # Obtains the certificate authority hash for the Kubernetes cluster.
+    - name: "CA Hash"
+      shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+      register: K8S_MASTER_CA_HASH
+
+    # Writes the Kubernetes join information (token, CA hash, control plane IP/port) to a local file.
+    # This file is used by worker nodes to join the Kubernetes cluster.
+    - name: Write K8S join information to a file
+      delegate_to: localhost
+      copy:
+        content: |
+          token: "{{ K8S_TOKEN.stdout }}"
+          hash: "{{ K8S_MASTER_CA_HASH.stdout }}"
+          ip_port: "{{ lb_ip.stdout }}"
+        dest: ./k8s_join_info.yml
+
+        # Fetch ca.crt from the first master
+    - name: Fetch ca.crt from firstMaster
+      fetch:
+        src: /etc/kubernetes/pki/ca.crt
+        dest: "./"
+        flat: yes
+
+    # Fetch sa.key from the first master
+    - name: Fetch sa.key from firstMaster
+      fetch:
+        src: /etc/kubernetes/pki/sa.key
+        dest: "./"
+        flat: yes
+    
+    # Fetch additional certificate files from the first master
+    - name: Fetch additional certificate files from firstMaster
+      fetch:
+        src: "/etc/kubernetes/pki/{{ item }}"
+        dest: "./"
+        flat: yes
+      loop:
+        - ca.key
+        - sa.pub
+        - front-proxy-ca.crt
+        - front-proxy-ca.key
+
+    # Fetch additional certificate files from the first master
+    - name: Fetch additional certificate files from firstMaster etcd
+      fetch:
+        src: "/etc/kubernetes/pki/{{ item }}"
+        dest: "./etcd/"
+        flat: yes
+      loop:
+        - etcd/ca.crt
+        - etcd/ca.key
+
+- hosts: otherMasters
+  tasks:
+     # Ensure the /etc/kubernetes/pki and /etc/kubernetes/pki/etcd directories exist
+    - name: Ensure Kubernetes PKI directories exist
+      become: yes
+      file:
+        path: "/etc/kubernetes/pki/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - ""
+        - etcd
+
+    # Copy the certificate files to the other masters
+    - name: Copy certificate files to otherMasters
+      become: yes
+      copy:
+        src: "{{ item }}"
+        dest: "/etc/kubernetes/pki/{{ item }}"
+        mode: '0600'
+      loop:
+        - ca.crt
+        - ca.key
+        - sa.key
+        - sa.pub
+        - front-proxy-ca.crt
+        - front-proxy-ca.key
+        - etcd/ca.crt
+        - etcd/ca.key
+
+    # Loads the Kubernetes join information from a file.
+    # This file contains the token, CA hash, and control plane IP/port required for joining the cluster.
+    - name: Load K8S join information
+      include_vars:
+        file: ./k8s_join_info.yml
+      delegate_to: localhost
+
+    # Joins the worker nodes to the Kubernetes cluster.
+    # Uses the token, CA hash, and control plane IP/port from the loaded join information.
+    - name: join k8s cluster
+      shell: >
+        kubeadm join --token={{ token }} --discovery-token-ca-cert-hash sha256:{{ hash }} --control-plane {{ ip_port }}
+
+    # Sets up the KUBECONFIG environment variable to enable kubectl to communicate with the cluster.
+    - name: Set KUBECONFIG environment variable
+      become: true
+      shell: |
+        mkdir -p $HOME/.kube
+        sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+- hosts: firstMaster
+  tasks:
+    # Read load balancer IP from the file
+    - name: Apply Calico networking
+      shell: kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+      
+    - name: Fetch the admin.conf file
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: "./"
+        flat: yes
+
+    # Copy component.yaml from local machine to remote host
+    - name: Copy components.yaml to remote host
+      copy:
+        src: ./components.yaml
+        dest: /tmp/components.yaml
+
+    # Apply component.yaml using kubectl
+    - name: install metric server
+      shell: kubectl apply -f /tmp/components.yaml
+
+         
