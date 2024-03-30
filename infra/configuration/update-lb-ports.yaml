@@ -1,0 +1,29 @@
+---
+# This playbook configures HAProxy on the load balancer nodes.
+- hosts: gateway
+  become: true
+  tasks:
+    # Read ports from the nodeports file
+    - name: Read ports from nodeports file
+      shell: "awk 'NR=={{ item.line }}' ./nodeports"
+      register: nodeports
+      with_items:
+        - { line: 1 }
+        - { line: 2 }
+        - { line: 3 }
+        - { line: 4 }
+      delegate_to: localhost
+
+    # Replace ports in the HAProxy configuration file
+    - name: Replace port 32000 in HAProxy configuration
+      replace:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '32000'
+        replace: "{{ nodeports.results[0].stdout }}"
+
+    # Restart the HAProxy service to apply the new configuration.
+    - name: Restart HAProxy service
+      systemd:
+        name: haproxy
+        state: restarted
+        daemon_reload: yes

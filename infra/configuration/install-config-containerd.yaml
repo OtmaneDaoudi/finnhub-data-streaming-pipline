@@ -1,0 +1,115 @@
+---
+# This playbook installs and configures containerd along with the necessary dependencies for a Kubernetes cluster.
+- name: Download, install, and configure containerd
+  hosts: nodes
+  become: true
+  
+  tasks:
+    # Install the required packages to download and extract files.
+    - name: Install required packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - wget
+        - tar
+
+    # Download the containerd binary from the official GitHub releases.
+    - name: Download containerd
+      ansible.builtin.get_url:
+        url: https://github.com/containerd/containerd/releases/download/v1.7.8/containerd-1.7.8-linux-amd64.tar.gz
+        dest: /tmp/containerd-1.7.8-linux-amd64.tar.gz
+      register: download_containerd
+
+    # Extract the downloaded containerd archive to the specified directory.
+    - name: Extract containerd
+      ansible.builtin.command: tar -C /usr/local -xzf /tmp/containerd-1.7.8-linux-amd64.tar.gz
+      when: download_containerd is succeeded
+
+    # Create the system directory for containerd's systemd service file.
+    - name: Create containerd service file directory
+      ansible.builtin.file:
+        path: /usr/local/lib/systemd/system/
+        state: directory
+
+    # Download the containerd service file from the official GitHub repository.
+    - name: Download containerd service file
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        dest: /usr/local/lib/systemd/system/containerd.service
+
+    # Reload systemd to apply the changes.
+    - name: Reload systemd manager configuration
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    # Enable and start the containerd service.
+    - name: Enable and start containerd service
+      ansible.builtin.service:
+        name: containerd
+        enabled: yes
+        state: started
+
+    # Download the runc binary from the official GitHub releases.
+    - name: Download runc
+      ansible.builtin.get_url:
+        url: https://github.com/opencontainers/runc/releases/download/v1.1.9/runc.amd64
+        dest: /usr/local/sbin/runc
+      register: download_runc
+
+    # Set the permissions for the downloaded runc binary.
+    - name: Set runc file permissions
+      ansible.builtin.file:
+        path: /usr/local/sbin/runc
+        mode: '0755'
+      when: download_runc is succeeded
+
+    # Download the CNI plugins from the official GitHub releases.
+    - name: Download CNI plugins
+      ansible.builtin.get_url:
+        url: https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-amd64-v1.3.0.tgz
+        dest: /tmp/cni-plugins-linux-amd64-v1.3.0.tgz
+      register: download_cni_plugins
+
+    # Create the directory for CNI plugins.
+    - name: Create cni plugins directory
+      ansible.builtin.file:
+        path: /opt/cni/bin
+        state: directory
+
+    # Extract the downloaded CNI plugins archive to the specified directory.
+    - name: Extract CNI plugins
+      ansible.builtin.command: tar -C /opt/cni/bin -xzf /tmp/cni-plugins-linux-amd64-v1.3.0.tgz
+      when: download_cni_plugins is succeeded
+
+    # Create the directory for containerd's configuration file.
+    - name: Create containerd configuration directory
+      ansible.builtin.file:
+        path: /etc/containerd/
+        state: directory
+
+    # Generate the default containerd configuration file.
+    - name: Configure containerd
+      ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
+
+    # Update the containerd configuration file to enable SystemdCgroup.
+    - name: Update containerd configuration
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+
+    # Restart the containerd service to apply the changes.
+    - name: Restart containerd service
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+
+    # Clean up the downloaded files.
+    - name: Clean up downloaded files
+      ansible.builtin.file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop:
+        - containerd-1.7.8-linux-amd64.tar.gz
+        - cni-plugins-linux-amd64-v1.3.0.tgz

@@ -1,0 +1,19 @@
+---
+# This playbook configures worker nodes to join the Kubernetes cluster.
+# It reads the join information saved by the master playbook and uses it to join each worker node to the cluster.
+- hosts: workers
+  tasks:
+    # Loads the Kubernetes join information from a file.
+    # This file contains the token, CA hash, and control plane IP/port required for joining the cluster.
+    - name: Load K8S join information
+      include_vars:
+        file: ./k8s_join_info.yml
+      delegate_to: localhost
+
+    # Joins the worker nodes to the Kubernetes cluster.
+    # Uses the token, CA hash, and control plane IP/port from the loaded join information.
+    - name: join k8s cluster
+      shell: >
+        kubeadm join --token={{ token }}
+        --discovery-token-ca-cert-hash sha256:{{ hash }}
+        {{ ip_port }}
