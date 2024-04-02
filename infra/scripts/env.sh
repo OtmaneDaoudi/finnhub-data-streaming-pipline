@@ -9,7 +9,7 @@ export TF_VAR_bucketName="terraform-state-bucket"
 export TF_VAR_gcpUserID="root"
 
 # Define the ID of your Google Cloud Platform project
-export TF_VAR_project="bigdata-project-418815"
+export TF_VAR_project="dataproject-419118"
 
 # Define the ID of the selected Google Cloud Platform region
 export TF_VAR_region="europe-west9"
