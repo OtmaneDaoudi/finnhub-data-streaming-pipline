@@ -1,2 +1,8 @@
-./infra/bigdata-project-sa.json
-./infra/.terraform
+infra/provisionning/.terraform.lock.hcl
+infra/provisionning/.terraform.tfstate.lock.info
+infra/provisionning/id_rsa
+infra/provisionning/terraform.tfstate
+infra/provisionning/terraform.tfstate.backup
+infra/provisionning/.terraform/providers/*
+infra/provisionning/terraform.tfstate.backup
+infra/provisionning/.terraform.lock.hcl
