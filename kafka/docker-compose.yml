@@ -27,3 +27,14 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
     depends_on:
       - zookeeper
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    ports:
+      - 9000:9000
+    environment:
+      - KAFKA_BROKERCONNECT=kafka-broker:9092,kafka-broker:9092
+    depends_on:
+      - kafka
+      - zookeeper
