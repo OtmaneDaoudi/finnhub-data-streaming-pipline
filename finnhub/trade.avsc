@@ -1,0 +1,56 @@
+{
+    "name": "trade",
+    "type": "record",
+    "doc": "Finnhub trade schema",
+    "fields": [
+        {
+            "name": "data",
+            "type": "array",
+            "items": {
+                "type": "record",
+                "fields": [
+                    {
+                        "type": "string",
+                        "name": "s",
+                        "doc": "Stock symbol"
+                    },
+                    {
+                        "type": "float",
+                        "name": "p",
+                        "doc": "Last price"
+                    },
+                    {
+                        "type": "int",
+                        "name": "t",
+                        "doc": "UNIX milliseconds timestamp"
+                    },
+                    {
+                        "type": "float",
+                        "name": "v",
+                        "doc": "Volume"
+                    },
+                    {
+                        "type": [
+                            "null",
+                            {
+                                "type": "array",
+                                "default": [],
+                                "items": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        ],
+                        "name": "c",
+                        "doc": "List of trade conditions"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "string",
+            "name": "type",
+            "doc": "Type of message"
+        }
+    ]
+}
