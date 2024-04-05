@@ -1,17 +1,27 @@
 import websocket
-import avro
 import json
+import io
+import avro
+from avro.io import DatumWriter, BinaryEncoder
+from kafka import KafkaProducer
 
-import avro.schema
-from avro.datafile import DataFileReader, DataFileWriter
-from avro.io import DatumReader, DatumWriter
-
+PRODUCER = KafkaProducer(bootstrap_servers="localhost:9094")
+TOPIC = "market"
+SCHEMA = avro.schema.parse(open("trade.avsc").read())
+WRITER = DatumWriter(SCHEMA)
+BYTES_WRITER = io.BytesIO()
+ENCODER = BinaryEncoder(BYTES_WRITER)
 
 
 def on_message(ws, message):
-    schema = avro.schema.parse(open("user.avsc", "rb").read())
     payload = json.loads(message)
-    print()
+    message = {
+        "data": payload['data'],
+        "type": payload['type'],
+    }
+    WRITER.write(message, ENCODER)
+    raw_bytes = BYTES_WRITER.getvalue()
+    PRODUCER.send(TOPIC, raw_bytes)
 
 
 def on_error(ws, error):
