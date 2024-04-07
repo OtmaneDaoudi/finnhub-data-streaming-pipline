@@ -4,8 +4,10 @@ import io
 import avro
 from avro.io import DatumWriter, BinaryEncoder
 from kafka import KafkaProducer
+from kafka.admin import KafkaAdminClient, NewTopic
 
-PRODUCER = KafkaProducer(bootstrap_servers="localhost:9094")
+
+PRODUCER = KafkaProducer(bootstrap_servers="kafka-broker:9094")
 TOPIC = "market"
 SCHEMA = avro.schema.parse(open("trade.avsc").read())
 WRITER = DatumWriter(SCHEMA)
@@ -37,6 +39,15 @@ def on_open(ws):
 
 
 if __name__ == "__main__":
+    # Create kafka topic
+    admin_client = KafkaAdminClient(
+        bootstrap_servers="kafka-broker:9094"
+    )
+    topic_list = []
+    topic_list.append(
+        NewTopic(name="market", num_partitions=1, replication_factor=1))
+    admin_client.create_topics(new_topics=topic_list, validate_only=False)
+
     websocket.enableTrace(True)
     ws = websocket.WebSocketApp("wss://ws.finnhub.io?token=co7ap21r01qofja8vcl0co7ap21r01qofja8vclg",
                                 on_message=on_message,
