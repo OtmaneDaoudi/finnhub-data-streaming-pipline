@@ -1,0 +1,22 @@
+---
+# This playbook is designed to install the Spark Operator on a Kubernetes cluster.
+- name: Install Spark Operator
+  hosts: firstMaster
+  tasks:
+    - name: Download Spark Operator # Task to download the Spark Operator chart.
+      ansible.builtin.get_url: # Uses the `get_url` module to download files from URLs.
+        url: https://github.com/kubeflow/spark-operator/releases/download/spark-operator-chart-1.1.27/spark-operator-1.1.27.tgz # The URL of the Spark Operator chart to download.
+        dest: /tmp/spark-operator-1.1.27.tgz
+
+    - name: Create namespace spark-apps # Task to create a Kubernetes namespace.
+      ansible.builtin.command:
+        kubectl create namespace spark-apps
+
+    - name: Deploy Spark Operator # Task to deploy the Spark Operator using Helm.
+      ansible.builtin.command: 
+        helm install spark-operator /tmp/spark-operator-1.1.27.tgz --namespace spark-operator --create-namespace --set sparkJobNamespace=spark-apps
+
+    - name: Delete downloaded Spark Operator file # Task to clean up the downloaded Spark Operator chart.
+      ansible.builtin.file:
+        path: /tmp/spark-operator-1.1.27.tgz
+        state: absent

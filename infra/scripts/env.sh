@@ -23,7 +23,7 @@ export TF_VAR_osImage="ubuntu-os-cloud/ubuntu-2004-lts"
 ### Other variables used by Terraform
 
 # Define the number of worker instances to be created
-export TF_VAR_workersVMSCount=1
+export TF_VAR_workersVMSCount=2
 
 # Define the number of master instances to be created
 export TF_VAR_mastersVMSCount=1

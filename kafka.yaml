@@ -1,0 +1,10 @@
+kubectl create namespace kafka
+
+---
+
+
+---
+
+---
+ # Get the NodePort assigned to kafdrop
+   
