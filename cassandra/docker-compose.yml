@@ -1,0 +1,10 @@
+version: '3'
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    hostname: cassandra
+    volumes:
+      - ./data:/var/lib/cassandra
+    ports:
+      - 9042:9042
