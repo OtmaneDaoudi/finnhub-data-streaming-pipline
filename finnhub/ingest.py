@@ -6,16 +6,10 @@ from avro.io import DatumWriter, BinaryEncoder
 from kafka import KafkaProducer
 from kafka.admin import KafkaAdminClient, NewTopic
 
-from time import sleep
-
 
 PRODUCER = KafkaProducer(bootstrap_servers="localhost:9094")
 TOPIC = "market"
 SCHEMA = avro.schema.parse(open("trade.avsc").read())
-WRITER = DatumWriter(SCHEMA)
-BYTES_WRITER = io.BytesIO()
-ENCODER = BinaryEncoder(BYTES_WRITER)
-
 
 def on_message(ws, message):
     payload = json.loads(message)
@@ -23,7 +17,11 @@ def on_message(ws, message):
         "data": payload['data'],
         "type": payload['type'],
     }
-    sleep(1)
+
+    WRITER = DatumWriter(SCHEMA)
+    BYTES_WRITER = io.BytesIO()
+    ENCODER = BinaryEncoder(BYTES_WRITER)
+
     WRITER.write(message, ENCODER)
     raw_bytes = BYTES_WRITER.getvalue()
     PRODUCER.send(TOPIC, raw_bytes)
@@ -39,6 +37,7 @@ def on_close(ws):
 
 def on_open(ws):
     ws.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
+    # ws.send('{"type":"subscribe","symbol":"COINBASE:BTC-USD"}')
 
 
 if __name__ == "__main__":
