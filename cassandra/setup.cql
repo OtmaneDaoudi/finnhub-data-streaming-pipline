@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS trades(
 ) WITH CLUSTERING ORDER BY (event_time DESC, offset DESC);
 
 CREATE TABLE IF NOT EXISTS minute_trades(
-    id INT,
+    last_offset INT,
     avg_price DOUBLE,
     total INT,
     event_time TIMESTAMP,
 
-    PRIMARY KEY ((id), event_time)
+    PRIMARY KEY ((last_offset), event_time)
 ) WITH CLUSTERING ORDER BY (event_time DESC);
