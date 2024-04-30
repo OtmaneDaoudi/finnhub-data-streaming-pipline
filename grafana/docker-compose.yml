@@ -1,0 +1,21 @@
+version: '3'
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    hostname: cassandra
+    volumes:
+      - ../cassandra/data:/var/lib/cassandra
+    ports:
+      - 9042:9042
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - ./data/:/var/lib/grafana
+    user: "$UID:$GID"
+    ports:
+      - 3000:3000
+    depends_on:
+      - cassandra
