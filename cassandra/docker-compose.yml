@@ -1,10 +1,17 @@
 version: '3'
 services:
   cassandra:
-    image: cassandra:latest
-    container_name: cassandra
+    build: .
     hostname: cassandra
-    volumes:
-      - ./data:/var/lib/cassandra
+    # volumes:
+    #   - ./cassandra/data:/var/lib/cassandra
     ports:
       - 9042:9042
+    healthcheck:
+      test: ["CMD-SHELL", "/healthcheck.sh"]
+      interval: 1s
+      timeout: 2s
+      retries: 5
+
+  cassandra_i:
+    

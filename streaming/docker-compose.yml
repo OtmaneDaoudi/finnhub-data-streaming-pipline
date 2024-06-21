@@ -1,0 +1,39 @@
+version: "3"
+services:
+  spark-master:
+    build: .
+    hostname: spark-master
+    entrypoint: ["/opt/spark/sbin/start-master.sh"]
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_NO_DAEMONIZE=true
+
+  spark-worker-a:
+    build: .
+    entrypoint: ["/opt/spark/sbin/start-worker.sh"]
+    command: ["spark://spark-master:7077"]
+    ports:
+      - "9091:8080"
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
+    depends_on:
+      - spark-master
+
+  spark-worker-b:
+    build: .
+    entrypoint: ["/opt/spark/sbin/start-worker.sh"]
+    command: ["spark://spark-master:7077"]
+    ports:
+      - "9092:8080"
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
+    depends_on:
+      - spark-master
