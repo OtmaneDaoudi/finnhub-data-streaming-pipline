@@ -1,4 +1,5 @@
 FROM cassandra:latest
 WORKDIR /
 COPY setup.cql ./setup.cql
-COPY healthcheck.sh ./healthcheck.sh
+COPY setup.sh ./setup.sh
+RUN chmod a+x /setup.sh

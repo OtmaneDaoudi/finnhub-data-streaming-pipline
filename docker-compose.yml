@@ -11,13 +11,15 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: bitnami/kafka:latest
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile
     hostname: kafka-broker
     container_name: kafka-broker
     ports:
       - 9094:9094
-    volumes:
-      - ./kafka/data/kafka:/bitnami/kafka
+    # volumes:
+    #   - ./kafka/data/kafka:/bitnami/kafka
     environment:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
@@ -28,7 +30,7 @@ services:
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - ALLOW_PLAINTEXT_LISTENER=yes
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      test: ["CMD-SHELL", "/setup.sh"]
       timeout: 5s
       interval: 1s
       retries: 5
@@ -44,34 +46,35 @@ services:
       - KAFKA_BROKERCONNECT=kafka-broker:9092,kafka-broker:9092
       - JVM_OPTS=-Xms32M -Xmx64M
       - SERVER_SERVLET_CONTEXTPATH=/
-
-  ingestion:
-    build:
-      context: ./
-      dockerfile: finnhub/Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
 
   # cassandra
   cassandra:
-    image: cassandra:latest
+    build:
+      dockerfile: Dockerfile
+      context: ./cassandra
     hostname: cassandra
-    volumes:
-      - ./cassandra/data:/var/lib/cassandra
+    container_name: cassandra
+    # volumes:
+    #   - ./cassandra/data:/var/lib/cassandra
     ports:
       - 9042:9042
     healthcheck:
-      test: ["CMD-SHELL", "/healthcheck.sh"]
-      interval: 1s
-      timeout: 2s
-      retries: 5
+      test: [ "CMD-SHELL", "/setup.sh" ]
+      interval: 0s
+      timeout: 20s
+      retries: 20
+  # grafana
 
   # Spark cluster
   spark-master:
     build: 
+      context: ./
       dockerfile: streaming/Dockerfile
     hostname: spark-master
+    container_name: spark-master
     entrypoint: ["/opt/spark/sbin/start-master.sh"]
     ports:
       - "9090:8080"
@@ -80,31 +83,70 @@ services:
       - SPARK_MASTER_HOST=spark-master
       - SPARK_MASTER_PORT=7077
       - SPARK_NO_DAEMONIZE=true
+    volumes:
+      - ./streaming/data/ivy2:/root/.ivy2
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://spark-master:8080/"]
+      interval: 0s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      kafka:
+        condition: service_healthy
+      cassandra:
+        condition: service_healthy
 
   spark-worker-a:
     build: 
+      context: ./
       dockerfile: streaming/Dockerfile
+    container_name: spark-worker-a
     entrypoint: ["/opt/spark/sbin/start-worker.sh"]
     command: ["spark://spark-master:7077"]
     ports:
-      - "9091:8080"
+      - "9091:8081"
     environment:
       - SPARK_NO_DAEMONIZE=true
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_MEMORY=2g
     depends_on:
-      - spark-master
+      spark-master:
+        condition: service_started
+      # cassandra:
+      #   condition: service_healthy
 
   spark-worker-b:
     build: 
+      context: ./
       dockerfile: streaming/Dockerfile
+    container_name: spark-worker-b
     entrypoint: ["/opt/spark/sbin/start-worker.sh"]
     command: ["spark://spark-master:7077"]
     ports:
-      - "9092:8080"
+      - "9092:8081"
     environment:
       - SPARK_NO_DAEMONIZE=true
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_MEMORY=2g
     depends_on:
-      - spark-master
+      spark-master:
+        condition: service_started
+      # cassandra:
+      #   condition: service_healthy
+  
+  ingestion:
+    build:
+      context: ./
+      dockerfile: finnhub/Dockerfile
+    container_name: ingestion
+    depends_on:
+      kafka:
+        condition: service_healthy
+      spark-master:
+        condition: service_started
+      spark-worker-a:
+        condition: service_started
+      spark-worker-b:
+        condition: service_started
+      cassandra:
+        condition: service_healthy

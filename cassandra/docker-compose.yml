@@ -3,15 +3,20 @@ services:
   cassandra:
     build: .
     hostname: cassandra
+    container_name: cassandra
     # volumes:
     #   - ./cassandra/data:/var/lib/cassandra
     ports:
       - 9042:9042
     healthcheck:
-      test: ["CMD-SHELL", "/healthcheck.sh"]
-      interval: 1s
-      timeout: 2s
-      retries: 5
+      test: [ "CMD-SHELL", "/setup.sh" ]
+      interval: 0s
+      timeout: 20s
+      retries: 20
 
   cassandra_i:
-    
+    container_name: dummy
+    image: cassandra:latest
+    depends_on:
+      cassandra:
+        condition: service_healthy

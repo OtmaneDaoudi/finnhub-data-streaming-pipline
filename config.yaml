@@ -2,18 +2,18 @@ kafka:
   TOPIC: market
   KAFKA_SERVER: kafka-broker
   KAFKA_PORT : 9094
-  KAFKA_CLIENT_VERSION : '3.7.0'
 
 spark:
-  SCALA_VERSION : '2.12'
+  APP_NAME : BigDataStreaming
   SPARK_VERSION : '3.5.1'
-  SPARK_MASTER : local[*]
+  SCALA_VERSION : '2.12'
+  SPARK_MASTER : spark://localhost:7077
   SHUFFLE_PARTITIONS : 20
+  KAFKA_CLIENT_VERSION : '3.7.0'
 
 cassandra:
-  CASSANDRA_SERVER : localhost
+  CASSANDRA_SERVER : cassandra
   CASSANDRA_PORT : 9042
-  APP_NAME : BigDataStreaming
 
 finnhub:
   TOKEN: co7ap21r01qofja8vcl0co7ap21r01qofja8vclg
