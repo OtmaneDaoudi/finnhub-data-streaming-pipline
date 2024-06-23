@@ -7,7 +7,7 @@ spark:
   APP_NAME : BigDataStreaming
   SPARK_VERSION : '3.5.1'
   SCALA_VERSION : '2.12'
-  SPARK_MASTER : spark://localhost:7077
+  SPARK_MASTER : spark://spark-master:7077
   SHUFFLE_PARTITIONS : 20
   KAFKA_CLIENT_VERSION : '3.7.0'
 

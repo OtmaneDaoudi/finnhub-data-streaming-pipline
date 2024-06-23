@@ -18,4 +18,11 @@ SHUFFLE_PARTITIONS = config_spark["SHUFFLE_PARTITIONS"]
 CASSANDRA_SERVER = config_cassandra["CASSANDRA_SERVER"]
 CASSANDRA_PORT = config_cassandra["CASSANDRA_PORT"]
 
-print(f"--master {SPARK_MASTER} --name nigga --packages org.apache.spark:spark-sql-kafka-0-10_{SCALA_VERSION}:{SPARK_VERSION},org.apache.kafka:kafka-clients:{KAFKA_CLIENT_VERSION},org.apache.spark:spark-avro_{SCALA_VERSION}:{SPARK_VERSION},com.datastax.spark:spark-cassandra-connector-assembly_{SCALA_VERSION}:3.5.0,com.github.jnr:jnr-posix:3.1.19 --conf spark.cassandra.connection.host={CASSANDRA_SERVER}:{CASSANDRA_PORT}", end="")
+print(f"--master {SPARK_MASTER} "
+      f"--packages org.apache.spark:spark-sql-kafka-0-10_{SCALA_VERSION}:{SPARK_VERSION},"
+      f"org.apache.kafka:kafka-clients:{KAFKA_CLIENT_VERSION},"
+      f"org.apache.spark:spark-avro_{SCALA_VERSION}:{SPARK_VERSION},"
+      f"com.datastax.spark:spark-cassandra-connector-assembly_{SCALA_VERSION}:3.5.0,"
+      f"com.github.jnr:jnr-posix:3.1.19 "
+      f"--conf spark.cassandra.connection.host={CASSANDRA_SERVER}:{CASSANDRA_PORT} "
+      f"--conf spark.standalone.submit.waitAppCompletion=true", end="")

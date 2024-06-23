@@ -75,14 +75,14 @@ services:
       dockerfile: streaming/Dockerfile
     hostname: spark-master
     container_name: spark-master
-    entrypoint: ["/opt/spark/sbin/start-master.sh"]
     ports:
       - "9090:8080"
       - "7077:7077"
     environment:
-      - SPARK_MASTER_HOST=spark-master
-      - SPARK_MASTER_PORT=7077
-      - SPARK_NO_DAEMONIZE=true
+      - SPARK_MODE=master
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_USER=root
+      - SPARK_DAEMON_USER=root
     volumes:
       - ./streaming/data/ivy2:/root/.ivy2
     healthcheck:
@@ -101,38 +101,38 @@ services:
       context: ./
       dockerfile: streaming/Dockerfile
     container_name: spark-worker-a
-    entrypoint: ["/opt/spark/sbin/start-worker.sh"]
-    command: ["spark://spark-master:7077"]
     ports:
       - "9091:8081"
     environment:
-      - SPARK_NO_DAEMONIZE=true
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_USER=root
+      - SPARK_DAEMON_USER=root
+      - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=2g
     depends_on:
       spark-master:
         condition: service_started
-      # cassandra:
-      #   condition: service_healthy
 
   spark-worker-b:
     build: 
       context: ./
       dockerfile: streaming/Dockerfile
     container_name: spark-worker-b
-    entrypoint: ["/opt/spark/sbin/start-worker.sh"]
-    command: ["spark://spark-master:7077"]
     ports:
       - "9092:8081"
     environment:
-      - SPARK_NO_DAEMONIZE=true
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_USER=root
+      - SPARK_DAEMON_USER=root
+      - SPARK_WORKER_MEMORY=1g
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=2g
     depends_on:
       spark-master:
         condition: service_started
-      # cassandra:
-      #   condition: service_healthy
+      cassandra:
+        condition: service_healthy
   
   ingestion:
     build:
