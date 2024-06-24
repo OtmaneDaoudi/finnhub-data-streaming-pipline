@@ -1,8 +1,10 @@
 #!/bin/bash
 
-res=$(kafka-topics.sh --bootstrap-server localhost:9092 --list | grep market)
+source ./env.sh
+
+res=$(kafka-topics.sh --bootstrap-server ${KAFKA_SERVER}:${KAFKA_PORT} --list | grep ${TOPIC})
 
 if [ -z $res ];then
     # topic already exists
-    kafka-topics.sh --bootstrap-server kafka-broker:9092 --topic market --create --partitions 1 --replication-factor 1
+    kafka-topics.sh --bootstrap-server ${KAFKA_SERVER}:${KAFKA_PORT} --topic ${TOPIC} --create --partitions 1 --replication-factor 1
 fi

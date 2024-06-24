@@ -1,3 +1,4 @@
 FROM bitnami/kafka:latest
+USER root
 WORKDIR /
-COPY ./setup.sh ./setup.sh
+COPY ./kafka/setup.sh ./env.sh ./

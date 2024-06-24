@@ -3,18 +3,13 @@ from pyspark.sql.functions import explode, window, col
 from pyspark.sql.avro.functions import from_avro
 from pyspark.sql.dataframe import DataFrame
 
-import yaml
+import os
 
-config = yaml.safe_load(open("/config.yaml", 'r').read())
-config_kafka = config["kafka"]
-config_spark = config["spark"]
-config_cassandra = config["cassandra"]
+TOPIC = os.environ["TOPIC"]
+KAFKA_SERVER = os.environ["KAFKA_SERVER"]
+KAFKA_PORT = os.environ["KAFKA_PORT"]
 
-TOPIC = config_kafka["TOPIC"]
-KAFKA_SERVER = config_kafka["KAFKA_SERVER"]
-KAFKA_PORT = config_kafka["KAFKA_PORT"]
-
-APP_NAME = config_spark["APP_NAME"]
+APP_NAME = os.environ["APP_NAME"]
 
 spark = SparkSession.builder\
    .appName(APP_NAME)\
@@ -58,7 +53,7 @@ minute_trades_query = minute_trades_stream.writeStream\
     .format("org.apache.spark.sql.cassandra") \
     .option("checkpointLocation", '/tmp/checkpoint_minute_trades/') \
     .options(table = "minute_trades", keyspace = "market") \
-    .outputMode("Append")\
+    .outputMode("append")\
     .start() \
     
 trades_query.awaitTermination()

@@ -1,21 +1,23 @@
+from kafka import KafkaProducer
+from avro.io import DatumWriter, BinaryEncoder
 import websocket
 import json
 import io
 import avro
-import yaml
-from avro.io import DatumWriter, BinaryEncoder
-from kafka import KafkaProducer
+import os
 
-config = yaml.safe_load(open("../config.yaml", 'r').read())
-config_kafka = config["kafka"]
-config_finnhub = config["finnhub"]
+KAFKA_SERVER = os.environ["KAFKA_SERVER"]
+KAFKA_PORT = os.environ["KAFKA_PORT"]
+TOPIC = os.environ["TOPIC"]
+TOKEN = os.environ["TOKEN"]
 
-PRODUCER = KafkaProducer(bootstrap_servers=f"{config_kafka['KAFKA_SERVER']}:{config_kafka['KAFKA_PORT']}")
-TOPIC = config_kafka["TOPIC"]
+
+PRODUCER = KafkaProducer(bootstrap_servers=f"{KAFKA_SERVER}:{KAFKA_PORT}")
 SCHEMA = avro.schema.parse(open("trade.avsc").read())
 
 
 def on_message(ws, message):
+    print("token : ", TOKEN)
     payload = json.loads(message)
     message = {
         "data": payload['data'],
@@ -40,13 +42,13 @@ def on_close(ws):
 
 
 def on_open(ws):
-    ws.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
-    # ws.send('{"type":"subscribe","symbol":"COINBASE:BTC-USD"}')
+    # ws.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
+    ws.send('{"type":"subscribe","symbol":"COINBASE:BTC-USD"}')
 
 
 if __name__ == "__main__":
     websocket.enableTrace(True)
-    ws = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={config_finnhub['TOKEN']}",
+    ws = websocket.WebSocketApp(f"wss://ws.finnhub.io?token={TOKEN}",
                                 on_message=on_message,
                                 on_error=on_error,
                                 on_close=on_close)
