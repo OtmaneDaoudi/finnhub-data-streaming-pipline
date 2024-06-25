@@ -42,8 +42,7 @@ def on_close(ws):
 
 
 def on_open(ws):
-    # ws.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
-    ws.send('{"type":"subscribe","symbol":"COINBASE:BTC-USD"}')
+    ws.send('{"type":"subscribe","symbol":"BINANCE:BTCUSDT"}')
 
 
 if __name__ == "__main__":
