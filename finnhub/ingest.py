@@ -17,7 +17,6 @@ SCHEMA = avro.schema.parse(open("trade.avsc").read())
 
 
 def on_message(ws, message):
-    print("token : ", TOKEN)
     payload = json.loads(message)
     message = {
         "data": payload['data'],
@@ -34,11 +33,11 @@ def on_message(ws, message):
 
 
 def on_error(ws, error):
-    print(error)
+    pass
 
 
-def on_close(ws):
-    print("### closed ###")
+def on_close(ws, arg1, arg2):
+    pass
 
 
 def on_open(ws):
@@ -52,4 +51,4 @@ if __name__ == "__main__":
                                 on_error=on_error,
                                 on_close=on_close)
     ws.on_open = on_open
-    ws.run_forever()
+    ws.run_forever(reconnect = 1)
