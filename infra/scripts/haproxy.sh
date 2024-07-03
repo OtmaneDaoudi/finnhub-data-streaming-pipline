@@ -57,25 +57,15 @@ frontend Grafana_front
         mode http
         default_backend grafana_back
 
-frontend Backend_front
-        bind 0.0.0.0:8081
-        mode http
-        default_backend backend_back
-
 frontend Kafdrop_front
         bind 0.0.0.0:8082
         mode http
         default_backend kaf_back
 
-frontend http_front
-        bind 0.0.0.0:80
+frontend Spark
+        bind 0.0.0.0:8081
         mode http
-        default_backend http_back
-
-frontend https_front
-        bind 0.0.0.0:443
-        mode http
-        default_backend https_back
+        default_backend spark_back
 
 backend master-nodes
         mode tcp
@@ -89,16 +79,6 @@ for master in $masters; do
 done
 
 # Backend configurations for workers
-cat <<EOF >> ../configuration/haproxy.cfg
-
-backend http_back
-        mode http
-EOF
-
-for worker in $workers; do
-    echo "        server $worker $worker:30000 check fall 3 rise 2" >> ../configuration/haproxy.cfg
-done
-
 cat <<EOF >> ../configuration/haproxy.cfg
 
 backend grafana_back
@@ -121,22 +101,12 @@ done
 
 cat <<EOF >> ../configuration/haproxy.cfg
 
-backend backend_back
+backend spark_back
         mode http
 EOF
 
 for worker in $workers; do
-    echo "        server $worker $worker:31000 check fall 3 rise 2" >> ../configuration/haproxy.cfg
-done
-
-cat <<EOF >> ../configuration/haproxy.cfg
-
-backend https_back
-        mode http
-EOF
-
-for worker in $workers; do
-    echo "        server $worker $worker:30000 check fall 3 rise 2" >> ../configuration/haproxy.cfg
+    echo "        server $worker $worker:34000 check fall 3 rise 2" >> ../configuration/haproxy.cfg
 done
 
 echo "HAProxy configuration generated in haproxy.cfg"

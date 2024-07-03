@@ -1,0 +1,17 @@
+---
+- name: Deploy Ingestion app
+  hosts: firstMaster  # The target host where the playbook will be run
+  become: true  # Run all tasks with superuser privileges
+  tasks:
+    - name: Copy files to /tmp
+      copy:
+        src: "{{ item }}"
+        dest: "/tmp/{{ item }}"
+      with_items:
+        - ./ingestion-dep.yaml
+
+    - name: Create namespace ingestion
+      command: kubectl create namespace ingestion
+
+    - name: Apply ingestion-dep.yaml
+      command: kubectl apply -f /tmp/ingestion-dep.yaml -n ingestion 

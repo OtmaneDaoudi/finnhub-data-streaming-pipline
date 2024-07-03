@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnhub-streaming-pipeline
+  namespace: ingestion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: finnhub-streaming-pipeline
+  template:
+    metadata:
+      labels:
+        app: finnhub-streaming-pipeline
+    spec:
+      containers:
+      - name: finnhub-streaming-pipeline
+        image: otmanedaoudi/finnhub-streaming-ingestion:v2.0.0
+        env:
+        - name: TOPIC
+          value: "market"
+        - name: KAFKA_SERVER
+          value: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local"
+        - name: KAFKA_PORT
+          value: "9092"
+        - name: TOKEN
+          value: "co7ap21r01qofja8vcl0co7ap21r01qofja8vclg"

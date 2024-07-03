@@ -21,12 +21,19 @@
         regexp: '32000'
         replace: "{{ nodeports.results[0].stdout }}"
 
-     # Replace ports in the HAProxy configuration file
+    #  # Replace ports in the HAProxy configuration file
     - name: Replace port 33000 in HAProxy configuration
       replace:
         path: /etc/haproxy/haproxy.cfg
         regexp: '33000'
         replace: "{{ nodeports.results[1].stdout }}"
+    
+    #  # Replace ports in the HAProxy configuration file
+    - name: Replace port 34000 in HAProxy configuration
+      replace:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '34000'
+        replace: "{{ nodeports.results[2].stdout }}"
 
     # Restart the HAProxy service to apply the new configuration.
     - name: Restart HAProxy service

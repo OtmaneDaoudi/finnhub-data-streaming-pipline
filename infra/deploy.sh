@@ -4,13 +4,13 @@
 # Source environment variables
 source ./scripts/env.sh
 
-# # Remove the existing key file if it exists
+# Remove the existing key file if it exists
 # if [ -f "$TF_VAR_gcpPrivateKeyFile" ]; then
 #     # Remove the .ssh directory and its contents
 #     rm -r ~/.ssh
 # fi
 
-# # Generate the RSA key pair
+# Generate the RSA key pair
 # ssh-keygen -t rsa -P "" -f "$TF_VAR_gcpPrivateKeyFile" -C "$TF_VAR_gcpUserID" -b 2048
 
 # Change directory to the provisioning folder

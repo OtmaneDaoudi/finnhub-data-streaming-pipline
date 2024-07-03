@@ -6,3 +6,4 @@ infra/provisionning/terraform.tfstate.backup
 infra/provisionning/.terraform/providers/*
 infra/provisionning/terraform.tfstate.backup
 infra/provisionning/.terraform.lock.hcl
+infra/bigdata-project-sa.json

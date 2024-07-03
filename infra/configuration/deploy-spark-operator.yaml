@@ -3,20 +3,26 @@
 - name: Install Spark Operator
   hosts: firstMaster
   tasks:
-    - name: Download Spark Operator # Task to download the Spark Operator chart.
-      ansible.builtin.get_url: # Uses the `get_url` module to download files from URLs.
-        url: https://github.com/kubeflow/spark-operator/releases/download/spark-operator-chart-1.1.27/spark-operator-1.1.27.tgz # The URL of the Spark Operator chart to download.
-        dest: /tmp/spark-operator-1.1.27.tgz
-
-    - name: Create namespace spark-apps # Task to create a Kubernetes namespace.
+    - name: Create namespace spark-apps
       ansible.builtin.command:
         kubectl create namespace spark-apps
 
-    - name: Deploy Spark Operator # Task to deploy the Spark Operator using Helm.
-      ansible.builtin.command: 
-        helm install spark-operator /tmp/spark-operator-1.1.27.tgz --namespace spark-operator --create-namespace --set sparkJobNamespace=spark-apps
+    - name: Add helm chart repo
+      ansible.builtin.command:
+        helm repo add spark-operator https://kubeflow.github.io/spark-operator
 
-    - name: Delete downloaded Spark Operator file # Task to clean up the downloaded Spark Operator chart.
-      ansible.builtin.file:
-        path: /tmp/spark-operator-1.1.27.tgz
-        state: absent
+    - name: Update repo
+      ansible.builtin.command:
+        helm repo update
+
+    - name: Deploy Spark Operator
+      ansible.builtin.command: 
+        helm install spark-ope spark-operator/spark-operator --namespace spark-operator --create-namespace --set webhook.enable=true --set "sparkJobNamespaces={spark-apps}"
+
+    - name: Wait for Spark Operator to be ready
+      ansible.builtin.command:
+        kubectl wait --for=condition=available --timeout=300s deployment/spark-ope-spark-operator -n spark-operator
+      register: wait_result
+      retries: 10
+      delay: 30
+      until: wait_result.rc == 0

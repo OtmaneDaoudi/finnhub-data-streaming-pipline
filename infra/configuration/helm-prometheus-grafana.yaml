@@ -26,9 +26,94 @@
     - name: Update Helm chart repositories
       shell: helm repo update
 
-    # This task installs the Prometheus stack using Helm in the 'monitoring' namespace.
-    - name: Install Prometheus stack using Helm
-      shell: helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack --namespace monitoring
+    - name: Create PersistentVolume for Grafana
+      shell: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: PersistentVolume
+          metadata:
+            name: grafana-pv
+            namespace: monitoring
+          spec:
+            capacity:
+              storage: 3Gi
+            volumeMode: Filesystem
+            accessModes:
+              - ReadWriteOnce
+            persistentVolumeReclaimPolicy: Retain
+            storageClassName: standard
+            hostPath:
+              path: "/mnt/grafana"
+          EOF
+
+    # This task ensures the dashboards directory exists
+    - name: Ensure dashboards directory exists
+      file:
+        path: /tmp/dashboards
+        state: directory
+
+    # This task copies the dashboard JSON file to the remote host
+    - name: Copy dashboard JSON to remote host
+      copy:
+        src: dashboard.json
+        dest: /tmp/dashboards/custom-dashboard.json
+
+    # This task creates a ConfigMap for the dashboard
+    - name: Create ConfigMap for dashboard
+      shell: |
+        kubectl create configmap custom-dashboard-json --from-file=/tmp/dashboards/custom-dashboard.json -n monitoring
+
+    # This task creates a custom values file for Grafana configuration
+    - name: Create custom values file for Grafana configuration
+      copy:
+        dest: /tmp/grafana-custom-values.yaml
+        content: |
+          grafana:
+            persistence:
+              enabled: true
+              type: pvc
+              size: 2Gi
+              storageClassName: standard
+            plugins:
+              - hadesarchitect-cassandra-datasource
+            datasources:
+              datasources.yaml:
+                apiVersion: 1
+                datasources:
+                  - name: hadesarchitect-cassandra-datasource
+                    type: hadesarchitect-cassandra-datasource
+                    access: proxy
+                    url: cassandra.cass.svc.cluster.local:9042
+                    jsonData:
+                      consistency: ONE
+                      keyspace: market
+                    isDefault: false
+            env:
+              GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
+            dashboardProviders:
+              dashboardproviders.yaml:
+                apiVersion: 1
+                providers:
+                - name: 'default'
+                  orgId: 1
+                  folder: ''
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards
+            dashboards:
+              default:
+                custom-dashboard:
+                  file: /var/lib/grafana/dashboards/custom-dashboard.json
+
+    # This task installs/upgrades the Prometheus stack using Helm in the 'monitoring' namespace with custom values.
+    - name: Install/Upgrade Prometheus stack using Helm
+      shell: >
+        helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack 
+        --namespace monitoring 
+        --values /tmp/grafana-custom-values.yaml
+        --set-file grafana.dashboards.default.custom-dashboard.file=/tmp/dashboards/custom-dashboard.json
 
     # This task waits for all pods in the 'monitoring' namespace to be running.
     - name: wait for All pods to be running
@@ -37,6 +122,12 @@
       until: prometheus_service_check.stdout == ""
       retries: 10
       delay: 10
+
+    # This task copies the dashboard file to the Grafana pod
+    - name: Copy dashboard to Grafana pod
+      shell: |
+        GRAFANA_POD=$(kubectl get pods -n monitoring -l "app.kubernetes.io/name=grafana" -o jsonpath="{.items[0].metadata.name}")
+        kubectl cp /tmp/dashboards/custom-dashboard.json monitoring/$GRAFANA_POD:/var/lib/grafana/dashboards/custom-dashboard.json -c grafana
 
     # This task patches the Grafana service to change its type to NodePort.
     - name: Patch Grafana service to NodePort
@@ -55,3 +146,13 @@
         path: ./nodeports
         line: "{{ grafana_nodeport.stdout }}"
         create: yes
+
+    # This task checks Grafana logs for any dashboard import issues
+    - name: Check Grafana logs
+      shell: kubectl logs -n monitoring -l "app.kubernetes.io/name=grafana" -c grafana
+      register: grafana_logs
+
+    # This task displays Grafana logs
+    - name: Display Grafana logs
+      debug:
+        var: grafana_logs.stdout_lines
