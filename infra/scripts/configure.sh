@@ -33,7 +33,11 @@ ansible-playbook install-k8s-tools.yaml
 ansible-playbook master-playbook.yaml
 ansible-playbook worker-playbook.yaml
 ansible-playbook helm-prometheus-grafana.yaml
+ansible-playbook deploy-spark-operator.yaml
+ansible-playbook deploy-cassandra.yaml
+ansible-playbook deploy-kafka-stack.yaml
+ansible-playbook submit-spark-job.yaml
+ansible-playbook deploy-ingestion.yaml
 ansible-playbook update-lb-ports.yaml
-
 # Change back to the /tmp directory
 cd /tmp

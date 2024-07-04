@@ -1,0 +1,48 @@
+---
+- name: Deploy Kafka
+  hosts: firstMaster  # The target host where the playbook will be run
+  become: true  # Run all tasks with superuser privileges
+  tasks:
+    - name: Copy files to /tmp
+      copy:
+        src: "{{ item }}"  # Source file(s) to copy
+        dest: "/tmp/{{ item }}"  # Destination path
+      with_items:  # List of items to copy
+        - ./kafka-cluster.yaml
+        - ./kafka-topic.yaml
+        - ./kafdrop.yaml
+
+    - name: Create namespace kafka
+      command: kubectl create namespace kafka  # Command to create a new namespace in Kubernetes
+
+    - name: Deploy Kafka operator
+      command: kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka  # Command to deploy the Kafka operator
+
+    - name: Wait for Kafka operator
+      command: kubectl wait --for=condition=available --timeout=300s deployment/strimzi-cluster-operator -n kafka  # Wait until the Kafka operator is ready
+
+    - name: Apply kafka-cluster.yaml
+      command: kubectl apply -f /tmp/kafka-cluster.yaml -n kafka  # Apply the Kafka cluster configuration
+
+    - name: Wait for Kafka cluster
+      command: kubectl wait --for=condition=Ready --timeout=600s kafka/kafka-cluster -n kafka  # Wait until the Kafka cluster is ready
+
+    - name: Apply kafka-topic.yaml
+      command: kubectl apply -f /tmp/kafka-topic.yaml -n kafka  # Apply the Kafka topic configuration
+
+    - name: Apply kafdrop.yaml
+      command: kubectl apply -f /tmp/kafdrop.yaml -n kafka  # Apply the Kafdrop configuration
+
+    - name: Wait for Kafdrop
+      command: kubectl wait --for=condition=available --timeout=300s deployment/kafdrop -n kafka  # Wait until Kafdrop is ready
+
+    - name: Get the NodePort assigned to kafdrop
+      command: kubectl get svc kafdrop -n kafka -o jsonpath='{.spec.ports[?(@.port==9000)].nodePort}'  # Get the NodePort assigned to Kafdrop
+      register: kafdrop_nodeport  # Register the output of the command for later use
+
+    - name: Save Kafdrop NodePort to a file
+      delegate_to: localhost  # Run this task on the control machine
+      lineinfile:  # Add a line to a file
+        path: ./nodeports  # The file to add the line to
+        line: "{{ kafdrop_nodeport.stdout }}"  # The line to add
+        create: yes  # Create the file if it doesn't exist

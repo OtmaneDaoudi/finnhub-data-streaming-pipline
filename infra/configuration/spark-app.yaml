@@ -1,0 +1,54 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: pyspark-pi
+  namespace: spark-apps
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: "spark:3.5.1"
+  sparkConf:
+    spark.cassandra.connection.host: "cassandra.cass.svc.cluster.local:9042"
+    spark.driver.extraJavaOptions: "-Divy.cache.dir=/tmp -Divy.home=/tmp"
+  deps:
+    packages:
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1
+      - org.apache.kafka:kafka-clients:3.7.0
+      - org.apache.spark:spark-avro_2.12:3.5.1
+      - com.datastax.spark:spark-cassandra-connector-assembly_2.12:3.5.0
+      - com.github.jnr:jnr-posix:3.1.19
+  imagePullPolicy: Always
+  mainApplicationFile: local:///opt/spark/apps/streaming.py
+  sparkVersion: "3.5.1"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  driver:
+    env:
+      - name: TOPIC
+        value: market
+      - name: KAFKA_SERVER
+        value: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local
+      - name: KAFKA_PORT
+        value: "9092"
+      - name: APP_NAME
+        value: BigDataStreaming
+    configMaps:
+      - name: spark-job-script
+        path: /opt/spark/apps
+    cores: 1
+    coreLimit: "1200m"
+    memory: "1g"
+    labels:
+      version: 3.5.1
+    serviceAccount: spark-ope-spark
+  executor:
+    cores: 1
+    instances: 2
+    memory: "1g"
+    labels:
+      version: 3.5.1

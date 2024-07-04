@@ -1,0 +1,28 @@
+---
+# This playbook is designed to install the Spark Operator on a Kubernetes cluster.
+- name: Install Spark Operator
+  hosts: firstMaster
+  tasks:
+    - name: Create namespace spark-apps
+      ansible.builtin.command:
+        kubectl create namespace spark-apps
+
+    - name: Add helm chart repo
+      ansible.builtin.command:
+        helm repo add spark-operator https://kubeflow.github.io/spark-operator
+
+    - name: Update repo
+      ansible.builtin.command:
+        helm repo update
+
+    - name: Deploy Spark Operator
+      ansible.builtin.command: 
+        helm install spark-ope spark-operator/spark-operator --namespace spark-operator --create-namespace --set webhook.enable=true --set "sparkJobNamespaces={spark-apps}"
+
+    - name: Wait for Spark Operator to be ready
+      ansible.builtin.command:
+        kubectl wait --for=condition=available --timeout=300s deployment/spark-ope-spark-operator -n spark-operator
+      register: wait_result
+      retries: 10
+      delay: 30
+      until: wait_result.rc == 0
