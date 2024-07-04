@@ -8,3 +8,7 @@ infra/provisionning/terraform.tfstate.backup
 infra/provisionning/.terraform.lock.hcl
 infra/bigdata-project-sa.json
 infra/provisionning/output.json
+kafka/data/*
+cassandra/data/*
+streaming/data/*
+grafana/data/*
