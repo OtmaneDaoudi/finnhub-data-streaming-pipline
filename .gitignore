@@ -3,6 +3,12 @@ infra/provisionning/.terraform.tfstate.lock.info
 infra/provisionning/id_rsa
 infra/provisionning/terraform.tfstate
 infra/provisionning/terraform.tfstate.backup
-infra/provisionning/.terraform/providers/*
+infra/provisionning/.terraform
 infra/provisionning/terraform.tfstate.backup
 infra/provisionning/.terraform.lock.hcl
+infra/bigdata-project-sa.json
+infra/provisionning/output.json
+kafka/data/*
+cassandra/data/*
+streaming/data/*
+grafana/data/*

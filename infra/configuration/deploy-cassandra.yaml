@@ -1,0 +1,17 @@
+---
+- name: Deploy Cassandra
+  hosts: firstMaster  # The target host where the playbook will be run
+  become: true  # Run all tasks with superuser privileges
+  tasks:
+    - name: Copy files to /tmp
+      copy:
+        src: "{{ item }}"  # Source file(s) to copy
+        dest: "/tmp/{{ item }}"  # Destination path
+      with_items:  # List of items to copy
+        - ./cassandra.yaml
+
+    - name: Create namespace cassandra
+      command: kubectl create namespace cass  # Command to create a new namespace in Kubernetes
+
+    - name: Apply kafka-cluster.yaml
+      command: kubectl apply -f /tmp/cassandra.yaml -n cass  # Apply the Cassandra configuration

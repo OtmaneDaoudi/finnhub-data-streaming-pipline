@@ -1,0 +1,56 @@
+---
+- name: Submit Spark job, verify its status, and expose UI
+  hosts: firstMaster
+  become: true
+  tasks:
+    - name: Copy files to /tmp
+      copy:
+        src: "{{ item }}"
+        dest: "/tmp/{{ item }}"
+      with_items:
+        - ./cm-job.yaml
+        - ./spark-app.yaml
+
+    - name: Apply config map files
+      command: kubectl apply -f /tmp/cm-job.yaml -n spark-apps
+      
+    - name: Submit the spark job
+      command: kubectl apply -f /tmp/spark-app.yaml -n spark-apps
+
+    - name: Wait for Spark job to start running
+      command: kubectl get sparkapplication pyspark-pi -n spark-apps -o jsonpath='{.status.applicationState.state}'
+      register: job_status
+      until: job_status.stdout == "RUNNING"
+      retries: 30
+      delay: 10
+
+    - name: Display job status
+      debug:
+        msg: "Spark job status: {{ job_status.stdout }}"
+
+    - name: Fail if job is not running
+      fail:
+        msg: "Spark job failed to reach RUNNING state within the timeout period"
+      when: job_status.stdout != "RUNNING"
+
+    - name: Wait for Spark UI service to be created
+      command: kubectl get svc pyspark-pi-ui-svc -n spark-apps
+      register: ui_svc_check
+      until: ui_svc_check.rc == 0
+      retries: 30
+      delay: 10
+
+    - name: Change Spark UI service to NodePort
+      shell: |
+        kubectl patch svc pyspark-pi-ui-svc -n spark-apps -p '{"spec": {"type": "NodePort"}}'
+
+    - name: Get the NodePort assigned to Spark UI
+      command: kubectl get svc pyspark-pi-ui-svc -n spark-apps -o jsonpath='{.spec.ports[?(@.port==4040)].nodePort}'
+      register: spark_ui_nodeport
+
+    - name: Save Spark UI NodePort to a file
+      delegate_to: localhost
+      lineinfile:
+        path: ./nodeports
+        line: "{{ spark_ui_nodeport.stdout }}"
+        create: yes

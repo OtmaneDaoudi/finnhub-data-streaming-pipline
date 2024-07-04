@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cassandra-custom-entrypoint
+  namespace: cass
+data:
+  custom-entrypoint.sh: |
+    #!/bin/bash
+    set -e
+
+    # Run the original entrypoint script
+    /docker-entrypoint.sh "$@" &
+
+    # Wait for Cassandra to be ready
+    until cqlsh -e "DESCRIBE KEYSPACES" > /dev/null 2>&1; do
+      echo "Waiting for Cassandra to be ready..."
+      sleep 5
+    done
+
+    # Execute init scripts
+    for f in /docker-entrypoint-initdb.d/*; do
+      case "$f" in
+        *.cql)     echo "$0: running $f" && cqlsh -f "$f"; echo ;;
+        *.cql.gz)  echo "$0: running $f" && gunzip -c "$f" | cqlsh; echo ;;
+        *)         echo "$0: ignoring $f" ;;
+      esac
+    done
+
+    # Wait for the original process to terminate
+    wait $!
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cassandra-init-script
+  namespace: cass
+data:
+  init.cql: |
+    CREATE KEYSPACE IF NOT EXISTS market WITH replication = {'class' : 'SimpleStrategy', 'replication_factor' : 1};
+    USE market;
+    CREATE TABLE IF NOT EXISTS trades(
+        offset INT,
+        symbol VARCHAR,
+        volume DOUBLE,
+        price DOUBLE,
+        event_time TIMESTAMP,
+        PRIMARY KEY ((symbol), event_time, offset)
+    ) WITH CLUSTERING ORDER BY (event_time DESC, offset DESC);
+    CREATE TABLE IF NOT EXISTS minute_trades(
+        symbol VARCHAR,
+        avg_price DOUBLE,
+        total INT,
+        event_time TIMESTAMP,
+        PRIMARY KEY ((symbol), event_time)
+    ) WITH CLUSTERING ORDER BY (event_time DESC);
+---
+# PersistentVolume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: db-pv
+  namespace: cass
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: "/mnt/data"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cassandra
+  name: cassandra
+spec:
+  clusterIP: None
+  ports:
+    - port: 9042
+  selector:
+    app: cassandra
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  labels:
+    app: cassandra
+spec:
+  serviceName: cassandra
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      containers:
+        - name: cassandra
+          image: cassandra:3.11.8
+          command: ["/custom-entrypoint.sh"]
+          args: ["cassandra", "-f"]
+          env:
+            - name: CASSANDRA_SEEDS
+              value: "cassandra-0.cassandra.cass.svc.cluster.local"
+          volumeMounts:
+            - mountPath: "/var/lib/cassandra"
+              name: cassandra-data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+            - name: custom-entrypoint
+              mountPath: /custom-entrypoint.sh
+              subPath: custom-entrypoint.sh
+      volumes:
+      - name: init-script
+        configMap:
+          name: cassandra-init-script
+      - name: custom-entrypoint
+        configMap:
+          name: cassandra-custom-entrypoint
+          defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: cassandra-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: standard
