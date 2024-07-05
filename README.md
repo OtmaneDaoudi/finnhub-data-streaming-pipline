@@ -102,6 +102,8 @@ The project architecture within Kubernetes is organized as follows:
 
 The number of master and worker nodes, along with other configurations such as region, zone, machine type, and OS image, are defined in the [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) script.
 
+Also make sure to grab your own API key and place it in [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) in order to use [Finnhub](https://finnhub.io/) websocket.
+
 ### Note on Production Deployment
 
 While NodePort services are used in this setup for simplicity, they are generally not recommended for production environments. In a managed Kubernetes service like Google Kubernetes Engine (GKE), it's preferable to use LoadBalancer services or Ingress resources for external access.
