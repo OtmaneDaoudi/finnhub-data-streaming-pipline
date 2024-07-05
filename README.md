@@ -181,13 +181,6 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
 
    Given the project's architecture, we should consider if Kubernetes is necessary or if lighter alternatives like Docker or Docker Swarm would suffice.
 
-   Project components:
-   - Data ingestion (Python script/Kafka producer)
-   - Event streaming (Kafka broker with Zookeeper, Kafdrop)
-   - Stream processing (Spark Structured Streaming job)
-   - Data storage (Cassandra)
-   - Data visualization (Grafana)
-
    Considerations:
    - Kubernetes offers robust orchestration, scaling, and self-healing capabilities.
    - Docker Swarm provides simpler orchestration for smaller deployments.
