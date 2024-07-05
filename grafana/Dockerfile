@@ -1,4 +1,4 @@
-FROM grafana/grafana
+FROM grafana/grafana:9.5.20
 
 # Adds 1s refresh time
 COPY ./grafana.ini /etc/grafana/grafana.ini

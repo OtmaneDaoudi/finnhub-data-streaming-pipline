@@ -1,4 +1,4 @@
-FROM cassandra:latest
+FROM cassandra:4.0
 WORKDIR /
 COPY setup.cql ./setup.cql
 COPY setup.sh ./setup.sh
