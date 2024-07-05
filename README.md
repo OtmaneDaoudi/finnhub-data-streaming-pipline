@@ -126,14 +126,76 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
 
 5. Move the JSON file to the "infra" directory, placing it alongside the [deploy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/deploy.sh) and [destroy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/destroy.sh) scripts.
 
-6. Ensure the bash scripts have execute permissions.
+6. Obtain an API key from the [Finnhub Stock API](https://finnhub.io/).
 
-7. Deploy the project by running the [deploy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/deploy.sh) script.
+7. Open the [ingestion-dep.yaml](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8e3d5689e2573577530b0a634a2a0cb2b07e0cd7/infra/configuration/ingestion-dep.yaml) file and replace the value of the `TOKEN` environment variable with your Finnhub API key.
 
-8. After deployment, access the following UIs using the gateway server's external IP (found in the VM section of Google Cloud Console):
-   - Grafana UI: Port 8080
-     - Default credentials: admin:prom-operator (as defined in [Kube-Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack))
-   - Kafdrop UI: Port 8082
-   - Spark UI: Port 8081
+8. Ensure the bash scripts have execute permissions.
 
-9. To tear down the entire provisioned infrastructure, use the [destroy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/destroy.sh) script.
+9. Deploy the project by running the [deploy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/deploy.sh) script.
+
+10. After deployment, access the following UIs using the gateway server's external IP (found in the VM section of Google Cloud Console):
+    - Grafana UI: Port 8080
+      - Default credentials: admin:prom-operator (as defined in [Kube-Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack))
+    - Kafdrop UI: Port 8082
+    - Spark UI: Port 8081
+
+11. To tear down the entire provisioned infrastructure, use the [destroy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/destroy.sh) script.
+
+## Potential Improvements
+
+### Cloud and Deployment
+
+1. **Enhancing Gateway Server Fault Tolerance**
+
+   The current 'gateway-server' with HAProxy lacks fault tolerance. If the HAProxy process fails, services become unavailable. Potential solutions include:
+
+   a) HAProxy with [Keepalived](https://www.keepalived.org/):
+      - Originally considered but not feasible due to incompatibility with Google Cloud's network configuration.
+   
+   b) Monitoring with Monit:
+      - Implement [Monit](https://mmonit.com/monit/) on the gateway-server.
+      - Monit can alert when HAProxy fails, enabling:
+        - Manual intervention
+        - Automated provisioning of a new gateway-server
+
+2. **Managed vs. Self-Managed Kubernetes**
+
+   Currently, we use an on-premises Kubernetes cluster deployed with kubeadm. An alternative is using Google Kubernetes Engine (GKE).
+
+   Pros of GKE:
+   - Managed control plane
+   - Automated upgrades and security patches
+   - Integrated with GCP services
+   - Simplified cluster scaling
+
+   Pros of self-managed (current approach):
+   - Full control over cluster configuration
+   - Potential for cost savings
+
+   For this project, GKE would likely be more suitable, but we chose self-managed for educational purposes.
+
+3. **Kubernetes vs. Lighter Alternatives**
+
+   Given the project's architecture, we should consider if Kubernetes is necessary or if lighter alternatives like Docker or Docker Swarm would suffice.
+
+   Project components:
+   - Data ingestion (Python script/Kafka producer)
+   - Event streaming (Kafka broker with Zookeeper, Kafdrop)
+   - Stream processing (Spark Structured Streaming job)
+   - Data storage (Cassandra)
+   - Data visualization (Grafana)
+
+   Considerations:
+   - Kubernetes offers robust orchestration, scaling, and self-healing capabilities.
+   - Docker Swarm provides simpler orchestration for smaller deployments.
+   - Plain Docker might be sufficient for this relatively simple architecture.
+
+   For this specific project, Docker or Docker Swarm might be adequate, offering:
+   - Simpler setup and management
+   - Reduced resource overhead
+
+   However, Kubernetes provides:
+   - Better scalability for future growth
+   - More advanced networking and service discovery
+   - Robust ecosystem for monitoring and management
