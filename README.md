@@ -1,6 +1,6 @@
 # Finnhub data streaming pipeline for real-time Bitcoin trades analysis
-A real-time dashboard to visualize Bitcoin trades as they happen, including key metrics like trades count, the count and average trade price over 1 minute time window, trade volume over time and much more.
-The main goal was to leaverage the architecture of streaming data pipelines using well suited tools and technologies for reliability and low latency.  
+A real-time dashboard to visualize Bitcoin trades as they happen, including key metrics like trades count, the count and average trade price over a 1-minute time window, trade volume over time, and much more.
+The main goal was to leverage the architecture of streaming data pipelines using well-suited tools and technologies for reliability and low latency.  
 
 ## Repository layout
 The repository is organized into two branches:
@@ -12,19 +12,19 @@ The repository is organized into two branches:
 ## Architecture overview
 ![architecture](images/Architecture.gif)
 
-- **Data ingestion** : Data is collected from the Finnhub websocket, by a containerized Python script, which is also a Kafka producer, which serializes data into an Avro format and then push it into a Kafka topic called 'Market'.
+- **Data ingestion** : Data is collected from the Finnhub WebSocket, by a containerized Python script, a Kafka producer, which serializes data into Avro format and then pushes it into a Kafka topic called 'Market'.
 
-- **Event streaming** : A Kafka broker managed by zookeeper, which recieves data from the producer and stores it for later consumption.
+- **Event streaming** : A Kafka broker managed by zookeeper, which receives data from the producer and stores it for later consumption.
 Kafdrop is also used to monitor the Kafka broker.
 
-- **Stream processing** : A spark structured streaming job is implmented using PySpark, which consumes and deserializes Avro data consumed from the 'Market' topic, and then process it. The job is running in a cluster of 3 nodes, one being the master, and the rest are worker nodes.
+- **Stream processing** : A spark structured streaming job is implemented  using PySpark, which consumes and deserializes Avro data consumed from the 'Market' topic and then process it. The job is running in a cluster of 3 nodes, one being the master, and the rest are worker nodes.
 The streaming job performs two continous queries:
     - *Trades query* : Deserializes and transforms data into a suitable form, and then loads it into a cassandra table ('Trades' table). 
     - *Minute trades query* : Groups data into windows of 1 minute to calculate aggregate summaries (count and average), and then loads processed windows into a cassandra table ('Minute trades' table). 
 
-- **Data storage** : Processed data is stored into cassandra, within the 'Market' keyspace, containing two tables, 'Trades' and 'Minute trades'.
+- **Data storage** : Processed data is stored into Cassandra, within the 'Market' keyspace, containing two tables, 'Trades' and 'Minute trades'.
 
-- **Data visualization** : A grafana dashboard is used to query the data from the cassandra database, in regular interavals of 1s.
+- **Data visualization** : A Grafana dashboard is used to query the data from the Cassandra database, in regular intervals of 1s.
 
 ## Dashboard
 ![Dashboard git here](arch.drawio.png)
@@ -40,31 +40,31 @@ The Dashboard displays the following pieces of information:
 
 ## Deployment
 
-The project is deployed on Google Cloud Platform (GCP) in a highly available Kubernetes cluster. The cloud infrastructure is provisioned using Infrastructure as Code (IaC) principles with Terraform for resource creation and Ansible for configuration management.
+The project is deployed on Google Cloud Platform (GCP) in a highly available Kubernetes cluster. The cloud infrastructure is provisioned using Infrastructure as Code (IaC) using Terraform for resource creation and Ansible for configuration management.
 
 ### Cloud Architecture
 
 - **Terraform** is used to create and manage GCP resources, primarily Virtual Machines (VMs).
 - The architecture consists of:
-  - One or more Kubernetes master nodes
-  - One or more Kubernetes worker nodes
-  - A "gateway-server" VM
+  - One or more Kubernetes master nodes.
+  - One or more Kubernetes worker nodes.
+  - A "gateway-server" VM.
 
 #### Gateway Server
 - The only VM with an external IP (randomly assigned for cost efficiency)
 - Runs HAProxy as a reverse proxy and load balancer to:
-  - Distribute traffic among Kubernetes master nodes
-  - Expose necessary applications externally (Spark UI, Kafdrop UI, Grafana)
-- Serves as the entry point for Ansible configuration
+  - Distribute traffic among Kubernetes master nodes.
+  - Expose necessary applications externally (Spark UI, Kafdrop UI, Grafana).
+- Serves as the entry point for Ansible configuration.
 
 ### Configuration Management
 
 - **Ansible** playbooks and configurations are copied to the gateway server.
 - Cluster configuration is executed from within the network using private IPs for enhanced security.
 - Key Ansible tasks:
-  1. Configure VMs to provision a Kubernetes cluster using kubeadm
-  2. Deploy applications to the Kubernetes cluster
-  3. Configure HAProxy for external access ([haproxy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/haproxy.sh))
+  1. Configure VMs to provision a Kubernetes cluster using kubeadm.
+  2. Deploy applications to the Kubernetes cluster.
+  3. Configure HAProxy for external access ([haproxy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/haproxy.sh)).
 
 ### Kubernetes Architecture
 
@@ -74,24 +74,24 @@ The project architecture within Kubernetes is organized as follows:
    - Producer deployment
 
 2. **Kafka Namespace**
-   - [Strimzi Kafka Operator](https://github.com/strimzi/strimzi-kafka-operator)
-   - Kafka cluster deployment
-   - Market topic creation
-   - [Kafdrop](https://github.com/obsidiandynamics/kafdrop) deployment for topic monitoring
+   - [Strimzi Kafka Operator](https://github.com/strimzi/strimzi-kafka-operator).
+   - Kafka cluster deployment.
+   - Market topic creation.
+   - [Kafdrop](https://github.com/obsidiandynamics/kafdrop) deployment for topic monitoring.
 
 3. **Spark Namespace**
-   - [Kubeflow Spark Operator](https://github.com/kubeflow/spark-operator)
-   - Spark Streaming job (deployed in 'spark-apps' namespace)
+   - [Kubeflow Spark Operator](https://github.com/kubeflow/spark-operator).
+   - Spark Streaming job (deployed in 'spark-apps' namespace).
 
 4. **Cassandra Deployment**
-   - StatefulSet with local persistent volume
+   - StatefulSet with local persistent volume.
 
 5. **Monitoring Namespace**
-   - [Kube-Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
-     - Prometheus for metric collection
-     - Grafana for metric visualization
-   - Pre-configured Grafana dashboards for cluster monitoring
-   - Automated Cassandra datasource configuration and Bitcoin dashboard setup
+   - [Kube-Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack).
+     - Prometheus for metric collection.
+     - Grafana for metric visualization.
+   - Pre-configured Grafana dashboards for cluster monitoring.
+   - Automated Cassandra datasource configuration and Bitcoin dashboard setup.
 
 ### External Access
 
@@ -102,7 +102,7 @@ The project architecture within Kubernetes is organized as follows:
 
 The number of master and worker nodes, along with other configurations such as region, zone, machine type, and OS image, are defined in the [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) script.
 
-Also make sure to grab your own API key and place it in [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) in order to use [Finnhub](https://finnhub.io/) websocket.
+Also make sure to grab your own API key and place it in [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) in order to use [Finnhub](https://finnhub.io/) WebSocket.
 
 ### Note on Production Deployment
 
@@ -163,7 +163,7 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
 
 2. **Managed vs. Self-Managed Kubernetes**
 
-   Currently, we use an on-premises Kubernetes cluster deployed with kubeadm. An alternative is using Google Kubernetes Engine (GKE).
+   Currently, we use a Kubernetes cluster deployed with kubeadm. An alternative is using Google Kubernetes Engine (GKE).
 
    Pros of GKE:
    - Managed control plane
