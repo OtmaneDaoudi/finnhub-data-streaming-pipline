@@ -40,7 +40,7 @@ The Dashboard displays the following pieces of information:
 
 ## Deployment
 
-The project is deployed on Google Cloud Platform (GCP) in a highly available, on-premises Kubernetes cluster. The cloud infrastructure is provisioned using Infrastructure as Code (IaC) principles with Terraform for resource creation and Ansible for configuration management.
+The project is deployed on Google Cloud Platform (GCP) in a highly available Kubernetes cluster. The cloud infrastructure is provisioned using Infrastructure as Code (IaC) principles with Terraform for resource creation and Ansible for configuration management.
 
 ### Cloud Architecture
 
