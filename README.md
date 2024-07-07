@@ -27,9 +27,9 @@ The streaming job performs two continous queries:
 - **Data visualization** : A Grafana dashboard is used to query the data from the Cassandra database, in regular intervals of 1s.
 
 ## Dashboard
-![Dashboard git here](arch.drawio.png)
+![Dashboard](images/Dashboard.gif)
 
-The Dashboard displays the following pieces of information:
+The Dashboard displays the following pieces of information :
 
     - A real-time line chart of Bitcoin trade price over time.
     - A real-time bar chart of Bitcoin trade volume over time.
