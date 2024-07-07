@@ -64,7 +64,7 @@ The project is deployed on Google Cloud Platform (GCP) in a highly available Kub
 - Key Ansible tasks:
   1. Configure VMs to provision a Kubernetes cluster using kubeadm.
   2. Deploy applications to the Kubernetes cluster.
-  3. Configure HAProxy for external access ([haproxy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/haproxy.sh)).
+  3. Configure HAProxy for external access ([haproxy.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/scripts/haproxy.sh)).
 
 ### Kubernetes Architecture
 
@@ -100,9 +100,9 @@ The project architecture within Kubernetes is organized as follows:
 
 ### Environment Configuration
 
-The number of master and worker nodes, along with other configurations such as region, zone, machine type, and OS image, are defined in the [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) script.
+The number of master and worker nodes, along with other configurations such as region, zone, machine type, and OS image are defined in the [env.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/scripts/env.sh) script.
 
-Also make sure to grab your own API key and place it in [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) in order to use [Finnhub](https://finnhub.io/) WebSocket.
+Also, make sure to grab your own API key and place it in [env.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/scripts/env.sh) in order to use [Finnhub](https://finnhub.io/) WebSocket.
 
 ### Note on Production Deployment
 
@@ -114,7 +114,7 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
 
 1. Create a new project in GCP.
 
-2. Update the necessary configurations in the [env.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/scripts/env.sh) script:
+2. Update the necessary configurations in the [env.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/scripts/env.sh) script:
    - Project ID
    - Zone
    - Region
@@ -126,15 +126,15 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
 
 4. Download the service account JSON file and rename it to "bigdata-project-sa.json".
 
-5. Move the JSON file to the "infra" directory, placing it alongside the [deploy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/deploy.sh) and [destroy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/destroy.sh) scripts.
+5. Move the JSON file to the "infra" directory, placing it alongside the [deploy.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/deploy.sh) and [destroy.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/destroy.sh) scripts.
 
 6. Obtain an API key from the [Finnhub Stock API](https://finnhub.io/).
 
-7. Open the [ingestion-dep.yaml](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8e3d5689e2573577530b0a634a2a0cb2b07e0cd7/infra/configuration/ingestion-dep.yaml) file and replace the value of the `TOKEN` environment variable with your Finnhub API key.
+7. Open the [ingestion-dep.yaml](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/configuration/ingestion-dep.yaml) file and replace the value of the `TOKEN` environment variable with your Finnhub API key.
 
 8. Ensure the bash scripts have execute permissions.
 
-9. Deploy the project by running the [deploy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/deploy.sh) script.
+9. Deploy the project by running the [deploy.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/deploy.sh) script.
 
 10. After deployment, access the following UIs using the gateway server's external IP (found in the VM section of Google Cloud Console):
     - Grafana UI: Port 8080
@@ -142,7 +142,7 @@ You can deploy the project on Google Cloud Platform (GCP) by following these ste
     - Kafdrop UI: Port 8082
     - Spark UI: Port 8081
 
-11. To tear down the entire provisioned infrastructure, use the [destroy.sh](https://gitlab.com/pipelineplumbers/BigDataProject/-/blob/8bc5f434e86d3a8c476844baf37abb5dc007d7e0/infra/destroy.sh) script.
+11. To tear down the entire provisioned infrastructure, use the [destroy.sh](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/infra/destroy.sh) script.
 
 ## Potential Improvements
 
