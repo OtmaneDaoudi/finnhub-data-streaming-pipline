@@ -9,23 +9,24 @@ The repository is organized into two branches:
 
 2. ***localDeployment*** : Code for local deployment using docker.
 
-## Architecture overview
-![Architecture](https://github.com/user-attachments/assets/503f0d0c-539d-4c87-b845-586ae2024987)
-For a high resolution image, click [here](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/images/Architecture.gif).
+## Architecture Overview
+![Architecture (1)](https://github.com/user-attachments/assets/9c4b2505-ed03-4629-8798-fef80873b033)
 
-- **Data ingestion** : Data is collected from the Finnhub WebSocket, by a containerized Python script, a Kafka producer, which serializes data into Avro format and then pushes it into a Kafka topic called 'Market'.
+For a high-resolution image, click [here](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/images/Architecture.gif).
 
-- **Event streaming** : A Kafka broker managed by zookeeper, which receives data from the producer and stores it for later consumption.
+- **Data ingestion**: Data is collected from the Finnhub WebSocket, by a containerized Python script, a Kafka producer, which serializes data into Avro format and then pushes it into a Kafka topic called 'Market'.
+
+- **Event streaming**: A Kafka broker managed by zookeeper, which receives data from the producer and stores it for later consumption.
 Kafdrop is also used to monitor the Kafka broker.
 
-- **Stream processing** : A spark structured streaming job is implemented  using PySpark, which consumes and deserializes Avro data consumed from the 'Market' topic and then process it. The job is running in a cluster of 3 nodes, one being the master, and the rest are worker nodes.
-The streaming job performs two continous queries:
-    - *Trades query* : Deserializes and transforms data into a suitable form, and then loads it into a cassandra table ('Trades' table). 
-    - *Minute trades query* : Groups data into windows of 1 minute to calculate aggregate summaries (count and average), and then loads processed windows into a cassandra table ('Minute trades' table). 
+- **Stream processing**: A spark structured streaming job is implemented  using PySpark, which consumes and deserializes Avro data consumed from the 'Market' topic and then process it. The job is running in a cluster of 3 nodes, one being the master, and the rest are worker nodes.
+The streaming job performs two continuous queries:
+    - *Trades query*: Deserializes and transforms data into a suitable form, and then loads it into a cassandra table ('Trades' table). 
+    - *Minute trades query*: Groups data into windows of 1 minute to calculate aggregate summaries (count and average), and then loads processed windows into a cassandra table ('Minute trades' table). 
 
-- **Data storage** : Processed data is stored into Cassandra, within the 'Market' keyspace, containing two tables, 'Trades' and 'Minute trades'.
+- **Data storage**: Processed data is stored in Cassandra, within the 'Market' keyspace, containing two tables, 'Trades' and 'Minute trades'.
 
-- **Data visualization** : A Grafana dashboard is used to query the data from the Cassandra database, in regular intervals of 1s.
+- **Data visualization**: A Grafana dashboard is used to query the data from the Cassandra database, in regular intervals of 1s.
 
 ## Dashboard
 ![Dashboard](images/Dashboard.gif)
@@ -36,7 +37,7 @@ The Dashboard displays the following pieces of information :
     - A real-time bar chart of Bitcoin trade volume over time.
     - A real-time metric for trades count.
     - The Average trade price over the past minute.
-    - The count of trades happened in the past minute.
+    - The count of trades that happened in the past minute.
     - A table recording entries for past minutes.
 
 ## Deployment
