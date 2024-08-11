@@ -10,7 +10,8 @@ The repository is organized into two branches:
 2. ***localDeployment*** : Code for local deployment using docker.
 
 ## Architecture overview
-![architecture](images/Architecture.gif)
+![Architecture](https://github.com/user-attachments/assets/503f0d0c-539d-4c87-b845-586ae2024987)
+For a high resolution image, click [here](https://github.com/OtmaneDaoudi/finnhub-data-streaming-pipline/blob/main/images/Architecture.gif).
 
 - **Data ingestion** : Data is collected from the Finnhub WebSocket, by a containerized Python script, a Kafka producer, which serializes data into Avro format and then pushes it into a Kafka topic called 'Market'.
 
